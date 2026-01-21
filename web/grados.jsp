@@ -19,6 +19,18 @@
     }
 %>
 
+<%
+    // DEPURACIÓN
+    System.out.println("=== grados.jsp CARGADO ===");
+    List<Grado> listaDepuracion = (List<Grado>) request.getAttribute("lista");
+    System.out.println("Lista en request: " + (listaDepuracion != null ? "NO NULL" : "NULL"));
+    if (listaDepuracion != null) {
+        System.out.println("Tamaño de lista: " + listaDepuracion.size());
+        for (Grado g : listaDepuracion) {
+            System.out.println("Grado en lista: " + g.getId() + " - " + g.getNombre());
+        }
+    }
+%>
 <head>
     <meta charset="UTF-8">
     <title>Registrar Alumno</title>
@@ -31,7 +43,7 @@
 
     <div class="container mt-4">
         <h2 class="mb-3">Listado de Grados</h2>
-        <a href="gradoForm.jsp" class="btn btn-success mb-3">Registrar Grado</a>
+        <a href="GradoServlet?accion=nuevo" class="btn btn-success mb-3">Registrar Grado</a>
 
         <table class="table table-bordered table-striped">
             <thead class="table-dark">

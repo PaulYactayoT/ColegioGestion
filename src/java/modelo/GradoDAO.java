@@ -25,26 +25,47 @@ public class GradoDAO {
      * 
      * @return Lista completa de grados disponibles
      */
-    public List<Grado> listar() {
-        List<Grado> lista = new ArrayList<>();
-        String sql = "{CALL obtener_grados()}";
+public List<Grado> listar() {
+    List<Grado> lista = new ArrayList<>();
+    
+    // CAMBIA TEMPORALMENTE a SQL directo para probar
+    String sql = "SELECT * FROM grado WHERE eliminado = 0";
+    // O si no tienes campo eliminado:
+    // String sql = "SELECT * FROM grado";
+    
+    System.out.println("=== GradoDAO.listar() INICIADO ===");
+    System.out.println("SQL: " + sql);
+    
+    try (Connection con = Conexion.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql);
+         ResultSet rs = ps.executeQuery()) {
         
-        try (Connection con = Conexion.getConnection();
-             CallableStatement cs = con.prepareCall(sql);
-             ResultSet rs = cs.executeQuery()) {
+        System.out.println("Conexión establecida: " + (con != null));
+        
+        int contador = 0;
+        while (rs.next()) {
+            contador++;
+            Grado g = new Grado();
+            g.setId(rs.getInt("id"));
+            g.setNombre(rs.getString("nombre"));
+            g.setNivel(rs.getString("nivel"));
             
-            while (rs.next()) {
-                Grado g = mapearResultSet(rs);
-                lista.add(g);
-            }
-            
-        } catch (SQLException e) {
-            System.err.println("Error al listar grados: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println("Grado " + contador + ": ID=" + g.getId() + 
+                               ", Nombre=" + g.getNombre() + 
+                               ", Nivel=" + g.getNivel() +
+                               ", Eliminado=" + rs.getInt("eliminado"));
+            lista.add(g);
         }
         
-        return lista;
+        System.out.println("Total grados encontrados: " + contador);
+        
+    } catch (SQLException e) {
+        System.err.println("ERROR en listar(): " + e.getMessage());
+        e.printStackTrace();
     }
+    
+    return lista;
+}
 
     /**
      * LISTAR SOLO GRADOS ACTIVOS
@@ -80,26 +101,39 @@ public class GradoDAO {
      * @return ID del grado creado, o -1 si falla
      */
     public int agregar(Grado g) {
-        String sql = "{CALL crear_grado(?, ?)}";
+    String sql = "{CALL crear_grado(?, ?)}";
+    
+    System.out.println("=== DEBUG agregar() ===");
+    System.out.println("Nombre: " + g.getNombre());
+    System.out.println("Nivel: " + g.getNivel());
+    
+    try (Connection con = Conexion.getConnection()) {
+        System.out.println("Conexión OK");
         
-        try (Connection con = Conexion.getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
-            
-            cs.setString(1, g.getNombre());
-            cs.setString(2, g.getNivel());
-            
-            ResultSet rs = cs.executeQuery();
-            if (rs.next()) {
-                return rs.getInt("id");
-            }
-            
-        } catch (SQLException e) {
-            System.err.println("Error al agregar grado: " + e.getMessage());
-            e.printStackTrace();
+        CallableStatement cs = con.prepareCall(sql);
+        cs.setString(1, g.getNombre());
+        cs.setString(2, g.getNivel());
+        
+        System.out.println("Ejecutando stored procedure...");
+        ResultSet rs = cs.executeQuery();
+        
+        if (rs.next()) {
+            int id = rs.getInt("id");
+            System.out.println("ÉXITO: ID generado = " + id);
+            return id;
+        } else {
+            System.out.println("ERROR: No se retornó ID");
+            return -1;
         }
         
+    } catch (SQLException e) {
+        System.err.println("ERROR SQL: " + e.getMessage());
+        System.err.println("SQLState: " + e.getSQLState());
+        System.err.println("Error Code: " + e.getErrorCode());
+        e.printStackTrace();
         return -1;
     }
+}
 
     /**
      * AGREGAR GRADO CON ORDEN ESPECÍFICO
@@ -226,21 +260,30 @@ public class GradoDAO {
      * @return true si la eliminación fue exitosa
      */
     public boolean eliminar(int id) {
-        String sql = "{CALL eliminar_grado(?)}";
+    // Cambia a DELETE directo (más confiable)
+    String sql = "UPDATE grado SET eliminado = 1, activo = 0 WHERE id = ?";
+    
+    System.out.println("=== ELIMINANDO GRADO ===");
+    System.out.println("ID: " + id);
+    System.out.println("SQL: " + sql);
+    
+    try (Connection con = Conexion.getConnection();
+         PreparedStatement ps = con.prepareStatement(sql)) {
         
-        try (Connection con = Conexion.getConnection();
-             CallableStatement cs = con.prepareCall(sql)) {
-            
-            cs.setInt(1, id);
-            cs.executeUpdate();
-            return true;
-            
-        } catch (SQLException e) {
-            System.err.println("Error al eliminar grado: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
+        ps.setInt(1, id);
+        int filasAfectadas = ps.executeUpdate();
+        
+        System.out.println("Filas afectadas: " + filasAfectadas);
+        System.out.println(filasAfectadas > 0 ? "ELIMINACIÓN EXITOSA" : "NO SE ENCONTRÓ EL GRADO");
+        
+        return filasAfectadas > 0;
+        
+    } catch (SQLException e) {
+        System.err.println("ERROR al eliminar grado ID " + id + ": " + e.getMessage());
+        e.printStackTrace();
+        return false;
     }
+}
 
     /**
      * DESACTIVAR GRADO (Soft Delete - Recomendado)

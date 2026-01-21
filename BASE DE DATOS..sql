@@ -1634,10 +1634,180 @@ BEGIN
     ORDER BY g.nivel, g.nombre, c.nombre;
 END$$
 
+-- Crear_profesor_completo
+DELIMITER $$
+CREATE PROCEDURE crear_profesor_completo(
+    IN p_nombres VARCHAR(100),
+    IN p_apellidos VARCHAR(100),
+    IN p_correo VARCHAR(100),
+    IN p_dni VARCHAR(20),
+    IN p_telefono VARCHAR(20),
+    IN p_especialidad VARCHAR(100)
+)
+BEGIN
+    DECLARE v_persona_id INT;
+    DECLARE v_profesor_id INT;
+    
+    -- 1. Insertar en tabla persona
+    INSERT INTO persona (tipo, nombres, apellidos, correo, dni, telefono)
+    VALUES ('PROFESOR', p_nombres, p_apellidos, p_correo, p_dni, p_telefono);
+    
+    SET v_persona_id = LAST_INSERT_ID();
+    
+    -- 2. Insertar en tabla profesor
+    INSERT INTO profesor (persona_id, especialidad, codigo_profesor, fecha_contratacion, estado)
+    VALUES (v_persona_id, p_especialidad, CONCAT('PROF-', LPAD(v_persona_id, 3, '0')), CURDATE(), 'ACTIVO');
+    
+    SET v_profesor_id = LAST_INSERT_ID();
+    
+    -- 3. Crear usuario por defecto
+    INSERT INTO usuario (persona_id, username, password, rol)
+    VALUES (v_persona_id, LOWER(CONCAT(p_nombres, '.', p_apellidos)), 
+            '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'docente');
+    
+    SELECT v_profesor_id as id;
+END$$
+DELIMITER ;
+
+-- Se crea stored procedure para listar profesores -- 
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `obtener_profesores_completos`$$
+CREATE PROCEDURE `obtener_profesores_completos`()
+BEGIN
+    SELECT 
+        p.id as profesor_id,
+        per.id as persona_id,
+        per.nombres,
+        per.apellidos,
+        per.correo,
+        per.telefono,
+        per.dni,  -- AÑADIDO
+        per.fecha_registro,  -- AÑADIDO
+        p.especialidad,
+        p.codigo_profesor,
+        p.fecha_contratacion,
+        p.estado,
+        p.fecha_registro as fecha_registro_profesor  -- AÑADIDO
+    FROM profesor p
+    JOIN persona per ON p.persona_id = per.id
+    WHERE p.eliminado = 0
+    AND per.eliminado = 0
+    ORDER BY per.apellidos, per.nombres;
+END$$
+
+DELIMITER ;
 --
+-- eliminar profesor 
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `eliminar_profesor`$$
+CREATE PROCEDURE `eliminar_profesor`(
+    IN p_id INT
+)
+BEGIN
+    DECLARE v_persona_id INT;
+    
+    -- Obtener el persona_id del profesor
+    SELECT persona_id INTO v_persona_id 
+    FROM profesor 
+    WHERE id = p_id 
+    AND eliminado = 0;
+    
+    IF v_persona_id IS NOT NULL THEN
+        -- Eliminar lógicamente el profesor
+        UPDATE profesor 
+        SET eliminado = 1,
+            activo = 0,
+            estado = 'INACTIVO'
+        WHERE id = p_id;
+        
+        -- Eliminar lógicamente la persona
+        UPDATE persona 
+        SET eliminado = 1,
+            activo = 0
+        WHERE id = v_persona_id;
+        
+        -- Eliminar lógicamente el usuario asociado
+        UPDATE usuario 
+        SET eliminado = 1,
+            activo = 0
+        WHERE persona_id = v_persona_id;
+        
+        SELECT 1 as resultado;
+    ELSE
+        SELECT 0 as resultado;
+    END IF;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+-- Procedure: `obtener_profesor_por_id`
+DROP PROCEDURE IF EXISTS `obtener_profesor_por_id`$$
+CREATE PROCEDURE `obtener_profesor_por_id`(
+    IN p_id INT
+)
+BEGIN
+    SELECT 
+        prof.id,
+        prof.persona_id,
+        per.nombres,
+        per.apellidos,
+        per.correo,
+        per.dni,
+        per.telefono,
+        prof.especialidad,
+        prof.codigo_profesor,
+        prof.estado,
+        prof.fecha_contratacion,
+        prof.fecha_registro,
+        per.direccion
+    FROM profesor prof
+    JOIN persona per ON prof.persona_id = per.id
+    WHERE prof.id = p_id 
+    AND prof.eliminado = 0
+    AND per.eliminado = 0
+    LIMIT 1;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+-- Procedure: `obtener_profesor_por_username`
+DROP PROCEDURE IF EXISTS `obtener_profesor_por_username`$$
+CREATE PROCEDURE `obtener_profesor_por_username`(
+    IN p_username VARCHAR(50)
+)
+BEGIN
+    SELECT 
+        prof.id,
+        prof.persona_id,
+        per.nombres,
+        per.apellidos,
+        per.correo,
+        per.dni,
+        per.telefono,
+        prof.especialidad,
+        prof.codigo_profesor,
+        prof.estado
+    FROM profesor prof
+    JOIN persona per ON prof.persona_id = per.id
+    JOIN usuario u ON per.id = u.persona_id
+    WHERE u.username = p_username 
+    AND prof.eliminado = 0
+    AND per.eliminado = 0
+    AND u.eliminado = 0
+    LIMIT 1;
+END$$
+
+DELIMITER ;
+
 -- Procedure: `obtener_profesores_disponibles_para_curso`
 --
-
+DELIMITER $$
 DROP PROCEDURE IF EXISTS `obtener_profesores_disponibles_para_curso`$$
 CREATE PROCEDURE `obtener_profesores_disponibles_para_curso`(
     IN p_curso_id INT
@@ -2100,6 +2270,9 @@ END$$
 -- Procedure: `actualizar_profesor`
 --
 
+-- Cambiar el delimitador primero
+DELIMITER $$
+
 DROP PROCEDURE IF EXISTS `actualizar_profesor`$$
 CREATE PROCEDURE `actualizar_profesor`(
     IN p_id INT,
@@ -2136,6 +2309,9 @@ BEGIN
         SELECT 0 as resultado, 'Profesor no encontrado' as mensaje;
     END IF;
 END$$
+
+-- Restaurar el delimitador original
+DELIMITER ;
 
 --
 -- Procedure: `eliminar_logico_profesor`
