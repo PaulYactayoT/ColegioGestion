@@ -35,7 +35,7 @@
     <div class="container mt-4">
         <h2><%= esEditar ? "Editar Grado" : "Registrar Grado"%></h2>
         <form action="GradoServlet" method="post">
-            <input type="hidden" name="id" value="<%= esEditar ? g.getId() : ""%>">
+        <input type="hidden" name="id" value="<%= esEditar ? String.valueOf(g.getId()) : ""%>">
 
             <div class="mb-3">
                 <label class="form-label">Nombre:</label>
@@ -46,9 +46,9 @@
                 <label class="form-label">Nivel:</label>
                 <select class="form-select" name="nivel" required>
                     <option value="">-- Selecciona un nivel --</option>
-                    <option value="Inicial" <%= esEditar && g.getNivel().equals("Inicial") ? "selected" : ""%>>Inicial</option>
-                    <option value="Primaria" <%= esEditar && g.getNivel().equals("Primaria") ? "selected" : ""%>>Primaria</option>
-                    <option value="Secundaria" <%= esEditar && g.getNivel().equals("Secundaria") ? "selected" : ""%>>Secundaria</option>
+                    <option value="INICIAL" <%= esEditar && g.getNivel().equals("INICIAL") ? "selected" : ""%>>Inicial</option>
+                    <option value="PRIMARIA" <%= esEditar && g.getNivel().equals("PRIMARIA") ? "selected" : ""%>>Primaria</option>
+                    <option value="SECUNDARIA" <%= esEditar && g.getNivel().equals("SECUNDARIA") ? "selected" : ""%>>Secundaria</option>
                 </select>
             </div>
 

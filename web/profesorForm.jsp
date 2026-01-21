@@ -35,31 +35,48 @@
     <div class="container">
         <h2 class="mb-4"><%= editar ? "Editar Profesor" : "Registrar Profesor"%></h2>
 
-        <form action="ProfesorServlet" method="post">
-            <% if (editar) {%>
-            <input type="hidden" name="id" value="<%= p.getId()%>">
-            <% }%>
-
-            <div class="mb-3">
-                <label>Nombres:</label>
-                <input type="text" name="nombres" class="form-control" value="<%= editar ? p.getNombres() : ""%>" required>
-            </div>
-            <div class="mb-3">
-                <label>Apellidos:</label>
-                <input type="text" name="apellidos" class="form-control" value="<%= editar ? p.getApellidos() : ""%>" required>
-            </div>
-            <div class="mb-3">
-                <label>Correo:</label>
-                <input type="email" name="correo" class="form-control" value="<%= editar ? p.getCorreo() : ""%>">
-            </div>
-            <div class="mb-3">
-                <label>Especialidad:</label>
-                <input type="text" name="especialidad" class="form-control" value="<%= editar ? p.getEspecialidad() : ""%>">
-            </div>
-
-            <button type="submit" class="btn btn-primary"><%= editar ? "Actualizar" : "Registrar"%></button>
-            <a href="ProfesorServlet" class="btn btn-secondary">Cancelar</a>
-        </form>
+        <form action="ProfesorServlet" method="POST">
+    <input type="hidden" name="id" value="<%= p != null ? p.getId() : "" %>">
+    
+    <div class="mb-3">
+        <label class="form-label">Nombres:</label>
+        <input type="text" class="form-control" name="nombres" 
+               value="<%= p != null ? p.getNombres() : "" %>" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Apellidos:</label>
+        <input type="text" class="form-control" name="apellidos" 
+               value="<%= p != null ? p.getApellidos() : "" %>" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Correo:</label>
+        <input type="email" class="form-control" name="correo" 
+               value="<%= p != null ? p.getCorreo() : "" %>" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Especialidad:</label>
+        <input type="text" class="form-control" name="especialidad" 
+               value="<%= p != null ? p.getEspecialidad() : "" %>" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">DNI:</label>
+        <input type="text" class="form-control" name="dni" 
+               value="<%= p != null ? p.getDni() : "" %>">
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Teléfono:</label>
+        <input type="text" class="form-control" name="telefono" 
+               value="<%= p != null ? p.getTelefono() : "" %>">
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="ProfesorServlet" class="btn btn-secondary">Cancelar</a>
+</form>
     </div>
     <footer class="bg-dark text-white py-2">
         <div class="container text-center text-md-start">
